@@ -1,0 +1,21 @@
+{
+ "name": "Healthlifting",
+ "short_name": "Healthlifting",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#1b1c16",
+ "theme_color": "#1b1c16",
+ "icons": [
+  {
+   "src": "cliente_192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "cliente_512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
+}

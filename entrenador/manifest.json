@@ -1,0 +1,21 @@
+{
+ "name": "Healthlifting Entrenador",
+ "short_name": "HL Entrenador",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#1b1c16",
+ "theme_color": "#1b1c16",
+ "icons": [
+  {
+   "src": "../entrenador_192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "../entrenador_512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
+}
