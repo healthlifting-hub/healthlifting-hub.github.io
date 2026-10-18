@@ -11,6 +11,8 @@
 <link rel="icon" type="image/png" href="cliente_192.png">
 <link rel="apple-touch-icon" href="cliente_192.png">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="dns-prefetch" href="https://script.googleusercontent.com">
 <style>
 html,body{margin:0;height:100%;background:#1b1c16;font-family:system-ui,-apple-system,sans-serif}
 body{padding-top:env(safe-area-inset-top);box-sizing:border-box;display:flex;flex-direction:column}
@@ -91,11 +93,10 @@ iframe{flex:1;border:0;width:100%;background:#f5f4ee}
     }).catch(function (e) { $('err').textContent = e.message; }).then(function () { $('b2').disabled = false; });
   };
   $('otro').onclick = function () { $('f2').hidden = true; $('f1').hidden = false; $('err').textContent = ''; };
+  // Con sesión guardada se abre la app al instante; si caducó, la app avisa y se vuelve a pedir el código.
   var t = get(K);
   if (!t) return login();
-  api({ api: 'yo', token: t }).then(function (r) {
-    if (r.ok) abrir(t); else { put(K, null); login(); }
-  }).catch(function () { abrir(t); });
+  abrir(t);
 })();
 </script>
 </body></html>
