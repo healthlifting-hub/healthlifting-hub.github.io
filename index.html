@@ -12,28 +12,90 @@
 <link rel="apple-touch-icon" href="cliente_192.png">
 <link rel="manifest" href="manifest.json">
 <style>
-html,body{margin:0;height:100%;background:#1b1c16}
+html,body{margin:0;height:100%;background:#1b1c16;font-family:system-ui,-apple-system,sans-serif}
 body{padding-top:env(safe-area-inset-top);box-sizing:border-box;display:flex;flex-direction:column}
 iframe{flex:1;border:0;width:100%;background:#f5f4ee}
-#c{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#ffd41f;font:600 16px system-ui,sans-serif;pointer-events:none}
+.msg{margin:auto;color:#ffd41f;font-weight:600;font-size:16px}
+.login{margin:auto;width:100%;max-width:360px;padding:24px 16px;box-sizing:border-box;color:#f1efe4}
+.login img{width:72px;height:72px;border-radius:16px;display:block;margin:0 auto 14px}
+.login h1{text-align:center;font-size:22px;margin:0 0 4px;color:#ffd41f;letter-spacing:.04em}
+.login p{text-align:center;color:#b8b6a4;font-size:14px;margin:0 0 18px}
+.login label{display:block;font-size:13px;color:#b8b6a4;margin:0 0 6px}
+.login input{width:100%;box-sizing:border-box;font-size:17px;padding:12px;border-radius:10px;border:1px solid #44463a;background:#26271f;color:#fff;margin-bottom:12px}
+.login button{width:100%;font-size:16px;font-weight:700;padding:13px;border:0;border-radius:10px;background:#ffd41f;color:#1b1c16;cursor:pointer}
+.login button.sec{background:transparent;color:#ffd41f;font-weight:500;margin-top:8px}
+.login button:disabled{opacity:.6}
+.err{color:#ff8a7a !important;min-height:1.2em}
+[hidden]{display:none !important}
 </style></head>
 <body>
+<div class="msg" id="cargando">Cargando Healthlifting…</div>
+<div class="login" id="login" hidden>
+  <img src="cliente_192.png" alt="">
+  <h1>HEALTHLIFTING</h1>
+  <form id="f1"><p>Escribe tu email y te enviamos un código.</p>
+    <label for="email">Email</label><input id="email" type="email" autocomplete="email" inputmode="email" required>
+    <button id="b1">Enviar código</button></form>
+  <form id="f2" hidden><p id="txt2"></p>
+    <label for="code">Código</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+    <button id="b2">Entrar</button><button type="button" class="sec" id="otro">Cambiar email</button></form>
+  <p class="err" id="err"></p>
+</div>
 <script>
-// Guarda la sesión de la app en este dispositivo para no pedir el código cada vez.
 (function () {
-  var K = 'hl_token';
+  var EXEC = 'https://script.google.com/macros/s/AKfycbzPwXC-NiXbKt5dy6pwOE7iklkoifGNIagnllOeTvG9eY0LOuRhsdXxsGPaLqFLn4Iq/exec', VISTA = '?', K = 'hl_token';
+  var $ = function (id) { return document.getElementById(id); };
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function put(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }
+  function api(o) {
+    return fetch(EXEC, { method: 'POST', body: JSON.stringify(o) }).then(function (r) { return r.json(); })
+      .then(function (j) { if (j && j.error) throw new Error(j.error); return j; });
+  }
+  function abrir(t) {
+    $('login').hidden = true; $('cargando').hidden = false;
+    var f = document.createElement('iframe');
+    f.title = document.title; f.allow = 'clipboard-write';
+    f.src = EXEC + VISTA + (t ? (VISTA === '?' ? '' : '&') + 's=' + t : '');
+    f.onload = function () { $('cargando').hidden = true; };
+    document.body.appendChild(f);
+  }
+  function login() {
+    $('cargando').hidden = true; $('login').hidden = false;
+    $('email').value = get('hl_email') || ''; $('email').focus();
+  }
+  // La app avisa cuando se entra o se sale desde dentro.
   window.addEventListener('message', function (ev) {
     if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(ev.origin)) return;
-    var d = ev.data;
-    if (!d || d.hl !== 1) return;
-    try {
-      if (d.op === 'get') ev.source.postMessage({ hl: 'token', token: localStorage.getItem(K) }, ev.origin);
-      else if (d.op === 'set' && typeof d.token === 'string' && /^[a-f0-9]{40,80}$/.test(d.token)) localStorage.setItem(K, d.token);
-      else if (d.op === 'del') localStorage.removeItem(K);
-    } catch (e) {}
+    var d = ev.data; if (!d || d.hl !== 1) return;
+    if (d.op === 'get') ev.source.postMessage({ hl: 'token', token: get(K) }, ev.origin);
+    else if (d.op === 'set' && typeof d.token === 'string' && /^[a-f0-9]{40,80}$/.test(d.token)) put(K, d.token);
+    else if (d.op === 'del' && get(K)) { put(K, null); location.reload(); }
   });
+  var email = '';
+  $('f1').onsubmit = function (ev) {
+    ev.preventDefault(); $('err').textContent = ''; $('b1').disabled = true;
+    email = $('email').value.trim(); put('hl_email', email);
+    api({ api: 'codigo', email: email }).then(function () {
+      $('f1').hidden = true; $('f2').hidden = false;
+      $('txt2').textContent = 'Si ' + email + ' está dado de alta, te hemos enviado un código de 6 dígitos. Mira también en spam.';
+      $('code').value = ''; $('code').focus();
+    }).catch(function (e) {
+      if (e instanceof TypeError) return abrir(null);  // sin conexión con el servidor: entra por la app
+      $('err').textContent = e.message;
+    }).then(function () { $('b1').disabled = false; });
+  };
+  $('f2').onsubmit = function (ev) {
+    ev.preventDefault(); $('err').textContent = ''; $('b2').disabled = true;
+    api({ api: 'entrar', email: email, code: $('code').value.trim() }).then(function (r) {
+      put(K, r.token); abrir(r.token);
+    }).catch(function (e) { $('err').textContent = e.message; }).then(function () { $('b2').disabled = false; });
+  };
+  $('otro').onclick = function () { $('f2').hidden = true; $('f1').hidden = false; $('err').textContent = ''; };
+  var t = get(K);
+  if (!t) return login();
+  api({ api: 'yo', token: t }).then(function (r) {
+    if (r.ok) abrir(t); else { put(K, null); login(); }
+  }).catch(function () { abrir(t); });
 })();
 </script>
-<div id="c">Cargando Healthlifting…</div>
-<iframe src="https://script.google.com/macros/s/AKfycbzPwXC-NiXbKt5dy6pwOE7iklkoifGNIagnllOeTvG9eY0LOuRhsdXxsGPaLqFLn4Iq/exec" title="Healthlifting" allow="clipboard-write" onload="document.getElementById('c').remove()"></iframe>
 </body></html>
